@@ -18,8 +18,13 @@ rot into a list of typos.
 """
 
 from .errors import (
-    BmapAuthError, BmapBusyError, BmapConnectionError, BmapDesyncError,
-    BmapDeviceError, BmapError, BmapInvalidArgError, BmapNotFoundError,
+    BmapAuthError,
+    BmapBusyError,
+    BmapDesyncError,
+    BmapDeviceError,
+    BmapError,
+    BmapInvalidArgError,
+    BmapNotFoundError,
     BmapTimeoutError,
 )
 

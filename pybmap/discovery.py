@@ -28,9 +28,8 @@ import ctypes
 import ctypes.wintypes
 import re
 import sys
-import threading
 
-from .catalog import BOSE_USB_VID, known_devices, lookup_device
+from .catalog import BOSE_USB_VID, lookup_device
 from .devices import DEVICES
 
 __all__ = [
@@ -471,6 +470,7 @@ def discover_winrt():  # pragma: no cover - needs the optional winrt package
     """
     try:
         import asyncio
+
         import winrt.windows.devices.bluetooth as bt  # type: ignore
         import winrt.windows.devices.enumeration as dev_enum  # type: ignore
     except ImportError:

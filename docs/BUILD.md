@@ -8,8 +8,8 @@ that a contributor on any machine can produce a shippable `.exe`.
 
 | Artefact | Spec | Subsystem | Contents |
 | --- | --- | --- | --- |
-| `BoseCtl.exe` | `build/BoseCtl.spec` | windowed | the GUI, tkinter, customtkinter, theme assets, icon |
-| `bosectl.exe` | `build/bosectl.spec` | console | the CLI only — tkinter and Pillow are excluded |
+| `BoseCtl.exe` | `build/BoseCtl-window.spec` | windowed | the GUI, tkinter, customtkinter, theme assets, icon |
+| `bosectl.exe` | `build/bosectl-console.spec` | console | the CLI only — tkinter and Pillow are excluded |
 
 Both are **one-file**: a single portable `.exe` with no install step, at the
 cost of a 2-3 s first-launch unpack. If you would rather have an instant start,
@@ -84,8 +84,8 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 
 python build/make_icon.py                   # regenerate build/icon.ico
-pyinstaller --clean --noconfirm build/BoseCtl.spec
-pyinstaller --clean --noconfirm build/bosectl.spec
+pyinstaller --clean --noconfirm build/BoseCtl-window.spec
+pyinstaller --clean --noconfirm build/bosectl-console.spec
 
 dist\BoseCtl.exe --demo
 dist\bosectl.exe --mock status

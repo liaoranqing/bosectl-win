@@ -42,33 +42,59 @@ import errno
 import os
 import time
 
-from .connection import BmapConnection
-from .transport import (
-    RfcommTransport, Transport, WindowsRfcommTransport, PyBluezTransport,
-    create_transport, describe_wsa_error, is_windows,
-)
-from .discovery import find_bmap_device, discover, suggest_device_type, diagnose
-from .devices import DEVICES, PRODUCT_IDS, get_device, detect_device_type
 from .catalog import (
-    BOSE_USB_VID, BMAP_UUID, BoseDevice, CATALOG,
-    lookup_device, known_devices, supported_devices, is_supported,
-    usb_ids, modalias,
+    BMAP_UUID,
+    BOSE_USB_VID,
+    CATALOG,
+    BoseDevice,
+    is_supported,
+    known_devices,
+    lookup_device,
+    modalias,
+    supported_devices,
+    usb_ids,
 )
+from .connection import BmapConnection
+from .constants import OP_STATUS
+from .devices import DEVICES, PRODUCT_IDS, detect_device_type, get_device
+from .discovery import diagnose, discover, find_bmap_device, suggest_device_type
 from .errors import (
-    BmapError, BmapConnectionError, BmapAuthError,
-    BmapDeviceError, BmapTimeoutError, BmapNotFoundError, BmapInvalidArgError,
-    BmapDesyncError, BmapBusyError,
+    BmapAuthError,
+    BmapBusyError,
+    BmapConnectionError,
+    BmapDesyncError,
+    BmapDeviceError,
+    BmapError,
+    BmapInvalidArgError,
+    BmapNotFoundError,
+    BmapTimeoutError,
+)
+from .messages import friendly_error
+from .mock import MockTransport
+from .protocol import (
+    bmap_packet,
+    fmt_response,
+    parse_all_responses,
+    parse_response,
+)
+from .transport import (
+    PyBluezTransport,
+    RfcommTransport,
+    Transport,
+    WindowsRfcommTransport,
+    create_transport,
+    describe_wsa_error,
+    is_windows,
 )
 from .types import (
-    BatteryReading, BatteryStatus, BmapResponse, ButtonMapping, DeviceStatus,
-    EqBand, ModeConfig,
+    BatteryReading,
+    BatteryStatus,
+    BmapResponse,
+    ButtonMapping,
+    DeviceStatus,
+    EqBand,
+    ModeConfig,
 )
-from .protocol import (
-    bmap_packet, parse_response, parse_all_responses, fmt_response,
-)
-from .constants import OP_STATUS
-from .mock import MockTransport
-from .messages import friendly_error
 
 __version__ = "1.0.0"
 

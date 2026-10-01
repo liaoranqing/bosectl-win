@@ -9,9 +9,20 @@ from pybmap.messages import friendly_error
 
 from ..labels import DEVICE_LABELS, DEVICE_LABELS_BY_KEY
 from ..theme import RADIUS, SPACE, get_theme
-from ..widgets import (Banner, Body, Card, Chip, DropdownRow, EmptyState,
-                       EntryRow, Muted, PageHeader, PrimaryButton,
-                       SecondaryButton, SectionTitle, ToggleRow)
+from ..widgets import (
+    Banner,
+    Card,
+    Chip,
+    DropdownRow,
+    EmptyState,
+    EntryRow,
+    Muted,
+    PageHeader,
+    PrimaryButton,
+    SecondaryButton,
+    SectionTitle,
+    ToggleRow,
+)
 from .base import View
 
 
@@ -22,7 +33,7 @@ class ConnectView(View):
     subtitle = "选择已配对的耳机，或用演示模式先体验全部功能"
 
     def build(self):
-        t = get_theme()
+        get_theme()
         page = self.scroll_page()
 
         PageHeader(page, "连接设备",
@@ -41,7 +52,7 @@ class ConnectView(View):
     # ── demo ──
 
     def _build_demo_card(self, page):
-        t = get_theme()
+        get_theme()
         card = Card(page)
         card.pack(fill="x", padx=SPACE["xl"], pady=(0, SPACE["md"]))
         body = card.body
@@ -61,7 +72,7 @@ class ConnectView(View):
     # ── paired devices ──
 
     def _build_scan_card(self, page):
-        t = get_theme()
+        get_theme()
         card = Card(page)
         card.pack(fill="x", padx=SPACE["xl"], pady=(0, SPACE["md"]))
         body = card.body
@@ -159,7 +170,7 @@ class ConnectView(View):
     # ── manual ──
 
     def _build_manual_card(self, page):
-        t = get_theme()
+        get_theme()
         card = Card(page)
         card.pack(fill="x", padx=SPACE["xl"], pady=(0, SPACE["md"]))
         body = card.body

@@ -13,14 +13,30 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from ..labels import (ANR_LABELS, ANR_LABELS_BY_VALUE, ANR_VALUES,
-                      SIDETONE_LABELS, SIDETONE_LABELS_BY_VALUE,
-                      SIDETONE_VALUES, SPATIAL_LABELS,
-                      SPATIAL_QUOTE_BY_ID, SPATIAL_VALUES)
+from ..labels import (
+    ANR_LABELS,
+    ANR_LABELS_BY_VALUE,
+    ANR_VALUES,
+    SIDETONE_LABELS,
+    SIDETONE_LABELS_BY_VALUE,
+    SIDETONE_VALUES,
+    SPATIAL_LABELS,
+    SPATIAL_QUOTE_BY_ID,
+    SPATIAL_VALUES,
+)
 from ..theme import SPACE, get_theme
-from ..widgets import (Card, Divider, DropdownRow, Muted, PageHeader,
-                       SecondaryButton, SectionTitle, SegmentedRow, SliderRow,
-                       ToggleRow)
+from ..widgets import (
+    Card,
+    Divider,
+    DropdownRow,
+    Muted,
+    PageHeader,
+    SecondaryButton,
+    SectionTitle,
+    SegmentedRow,
+    SliderRow,
+    ToggleRow,
+)
 from .base import View
 
 #: Milliseconds to coalesce slider drags before writing to the device.
@@ -56,7 +72,7 @@ class AudioView(View):
     # ── noise control ──
 
     def _build_noise(self, page):
-        t = get_theme()
+        get_theme()
         card = Card(page)
         card.pack(fill="x", padx=SPACE["xl"], pady=(0, SPACE["md"]))
         body = card.body

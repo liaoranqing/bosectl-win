@@ -16,9 +16,17 @@ import pybmap
 from pybmap.messages import friendly_error
 
 from ..theme import RADIUS, SPACE, get_theme
-from ..widgets import (Banner, Body, Card, Divider, EntryRow, KeyValueRow,
-                       Muted, PageHeader, PrimaryButton, SecondaryButton,
-                       SectionTitle)
+from ..widgets import (
+    Banner,
+    Card,
+    Divider,
+    EntryRow,
+    KeyValueRow,
+    Muted,
+    PageHeader,
+    SecondaryButton,
+    SectionTitle,
+)
 from .base import View
 
 

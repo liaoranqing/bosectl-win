@@ -12,7 +12,6 @@ import sys
 import pytest
 
 from pybmap import discovery
-from pybmap.catalog import lookup_device
 
 windows_only = pytest.mark.skipif(
     sys.platform != "win32", reason="Windows discovery required")
@@ -97,8 +96,8 @@ class TestDeviceTypeResolution:
 
     def test_every_mapped_type_exists_in_the_registry(self):
         """A mapping to a config that is not installed would crash connect()."""
-        from pybmap.devices import DEVICES
         from pybmap.catalog import known_devices
+        from pybmap.devices import DEVICES
         for entry in known_devices():
             if not entry.config:
                 continue

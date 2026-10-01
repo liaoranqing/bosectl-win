@@ -15,7 +15,6 @@ CI runner would block forever waiting for a click.
 """
 
 import os
-import sys
 import tempfile
 import time
 
@@ -24,9 +23,9 @@ import pytest
 pytest.importorskip("tkinter", reason="tkinter is not available")
 pytest.importorskip("customtkinter", reason="customtkinter is not available")
 
-from gui import views as views_pkg          # noqa: E402
-from gui.app import BoseCtlApp              # noqa: E402
-from gui.settings import Settings           # noqa: E402
+from gui import views as views_pkg  # noqa: E402
+from gui.app import BoseCtlApp  # noqa: E402
+from gui.settings import Settings  # noqa: E402
 
 #: How long to let the Tk event loop run while waiting for worker results.
 PUMP_SECONDS = 4.0
@@ -242,10 +241,17 @@ def test_disconnect_returns_to_the_connect_page(app, box):
 
 
 def test_worker_serialises_results_and_goes_idle(app, box):
+    """Three queued writes must come back in order, on one thread.
+
+    The channel carries one request at a time; results arriving out of order
+    would mean two requests were interleaved, which desynchronises the reply
+    stream on real hardware.
+    """
     _connect_mock(app, box)
     seen = []
     for level in (1, 2, 3):
-        app.read(app.dev.set_cnc, level, on_ok=lambda _r, l=level: seen.append(l))
+        app.read(app.dev.set_cnc, level,
+                 on_ok=lambda _result, sent=level: seen.append(sent))
     _pump(app)
     assert seen == [1, 2, 3]
     assert app.worker.busy is False

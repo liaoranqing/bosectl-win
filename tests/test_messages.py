@@ -13,14 +13,19 @@ silently rots into a list of plausible-looking but unreachable typos.
 """
 
 import os
-import re
 
 import pytest
 
 from pybmap import messages
 from pybmap.errors import (
-    BmapAuthError, BmapBusyError, BmapConnectionError, BmapDesyncError,
-    BmapDeviceError, BmapError, BmapInvalidArgError, BmapNotFoundError,
+    BmapAuthError,
+    BmapBusyError,
+    BmapConnectionError,
+    BmapDesyncError,
+    BmapDeviceError,
+    BmapError,
+    BmapInvalidArgError,
+    BmapNotFoundError,
     BmapTimeoutError,
 )
 

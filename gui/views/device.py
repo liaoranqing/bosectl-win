@@ -13,10 +13,20 @@ import customtkinter as ctk
 
 from pybmap.constants import ACTION_MODES, BUTTON_EVENTS, BUTTON_IDS
 
-from ..theme import RADIUS, SPACE, get_theme
-from ..widgets import (Body, Card, Chip, Divider, DropdownRow, EntryRow,
-                       KeyValueRow, Muted, PageHeader, PrimaryButton,
-                       SecondaryButton, SectionTitle, ToggleRow)
+from ..theme import SPACE, get_theme
+from ..widgets import (
+    Card,
+    Divider,
+    DropdownRow,
+    EntryRow,
+    KeyValueRow,
+    Muted,
+    PageHeader,
+    PrimaryButton,
+    SecondaryButton,
+    SectionTitle,
+    ToggleRow,
+)
 from .base import View
 
 MAX_NAME_BYTES = 32
@@ -218,7 +228,7 @@ class DeviceView(View):
         self.ctl_button.set(mapping.button_name, notify=False)
         self.ctl_event.set(mapping.event_name, notify=False)
         self.ctl_action.set(mapping.action_name, notify=False)
-        t = get_theme()
+        get_theme()
 
     def _apply_buttons(self):
         button = self.ctl_button.value()

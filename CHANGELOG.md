@@ -76,6 +76,25 @@ First Windows release. Based on upstream bosectl 0.5.0.
   are registered so the legacy generation is auto-detected. Upstream left
   this as a `TODO`.
 
+### Fixed
+
+- **Case-colliding build spec names.** The two PyInstaller specs were named
+  `build/BoseCtl.spec` and `build/bosectl.spec`. Windows and macOS
+  filesystems are case-insensitive, so those are the same file: git stored
+  one and silently dropped the other. Both packaging jobs therefore ran the
+  same spec (and failed together) while `ubuntu-latest` — where the paths
+  really are distinct — failed to find the missing one. Renamed to
+  `BoseCtl-window.spec` and `bosectl-console.spec`, and
+  `tests/test_version.py` now rejects any case-only path collision.
+- **Lint gate made deterministic.** Ruff 0.16 reports ~475 findings against
+  its default rule set, which has grown between releases. `pyproject.toml`
+  now selects an explicit set, and excludes the files vendored verbatim from
+  upstream, which are not ours to lint (see `NOTICE`).
+- **Specs are now syntax-checked by the test suite.** Nothing else compiles a
+  `.spec` file — `compileall` only reads `.py`, and no module imports one — so
+  a malformed spec previously survived every local check and only surfaced
+  when the packaging job ran.
+
 ### Known limitations
 
 - The QC35 generation has no EQ, no spatial audio and no modes; the UI greys

@@ -7,6 +7,7 @@ fast local equivalent of ``scripts/check_version.py``.
 
 import os
 import re
+import subprocess
 import sys
 
 import pytest
@@ -73,7 +74,7 @@ def test_repository_essentials_exist(relative):
 
 
 @pytest.mark.parametrize("relative", [
-    "build/BoseCtl.spec", "build/bosectl.spec", "build/entry_gui.py",
+    "build/BoseCtl-window.spec", "build/bosectl-console.spec", "build/entry_gui.py",
     "build/entry_cli.py", "build/make_icon.py",
     "build/version_info.py",
     ".github/workflows/ci.yml", ".github/workflows/build.yml",
@@ -116,3 +117,111 @@ def test_icon_generator_produces_a_multi_resolution_ico(tmp_path):
     assert (256, 256) in sizes
     assert len(sizes) >= 5, sizes
     assert (tmp_path / "icon.png").is_file()
+
+
+# ── repository layout ────────────────────────────────────────────────────────
+
+def _tracked_paths():
+    """Every path git knows about, or None when git is unavailable."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return [line for line in result.stdout.splitlines() if line.strip()]
+
+
+def test_no_tracked_paths_collide_by_letter_case():
+    """Guards the worst kind of cross-platform trap in a Windows-first repo.
+
+    Windows and macOS filesystems are case-insensitive, so two tracked paths
+    that differ only in case are *one file* there. Git stores one of them and
+    silently drops the other, so the checkout is missing a file that Linux —
+    where the paths really are distinct — then cannot find.
+
+    That is exactly how this repository once shipped a broken build: the two
+    PyInstaller specs were named ``BoseCtl.spec`` and ``bosectl.spec``, so
+    Windows saw a single file. Both packaging jobs ran the same spec, and the
+    library test suite failed only on ubuntu-latest.
+
+    Note that walking the working tree cannot detect this — on a
+    case-insensitive filesystem only one of the two files is visible at all.
+    The git index is the only place the collision exists, so it is what this
+    asserts on.
+    """
+    tracked = _tracked_paths()
+    if tracked is None:
+        pytest.skip("git is not available")
+
+    seen = {}
+    collisions = {}
+    for path in tracked:
+        key = path.lower()
+        if key in seen:
+            collisions.setdefault(key, [seen[key]]).append(path)
+        else:
+            seen[key] = path
+
+    assert not collisions, (
+        "these paths differ only by letter case, so whichever loses is missing "
+        "from every Windows and macOS checkout: %r" % collisions)
+
+
+def test_build_specs_have_distinct_names():
+    """A narrower, louder version of the check above for the two build specs.
+
+    Spelled out separately because these two files are the ones the release
+    pipeline depends on, and because the failure mode is silent.
+    """
+    names = [name for name in os.listdir(os.path.join(ROOT, "build"))
+             if name.endswith(".spec")]
+    lowered = [name.lower() for name in names]
+    assert len(set(lowered)) == len(lowered), (
+        "build/*.spec names collide on a case-insensitive filesystem: %r" % names)
+    assert len(names) >= 2, names
+
+
+@pytest.mark.parametrize("spec", [
+    "build/BoseCtl-window.spec",
+    "build/bosectl-console.spec",
+])
+def test_build_specs_are_valid_python(spec):
+    """PyInstaller specs are Python, but nothing else ever compiles them.
+
+    ``compileall`` only looks at ``.py`` files and nothing imports a spec, so a
+    syntax error in one survives every local check and only appears when the
+    packaging job runs — which, for a tagged release, is after the tag exists.
+
+    The specs also carry the one setting that cannot be tested by running the
+    build locally on this machine: whether the binary is windowed or console.
+    """
+    source = open(os.path.join(ROOT, spec), encoding="utf-8").read()
+    compile(source, spec, "exec")          # raises SyntaxError on corruption
+
+
+def test_windowed_spec_is_windowed_and_console_spec_is_console():
+    """Swapping the two spec bodies would produce an EXE that flashes a console.
+
+    The two specs are near-identical apart from this, so an easy mistake is to
+    paste one over the other. Both the entry script and the subsystem are
+    checked.
+    """
+    gui = open(os.path.join(ROOT, "build", "BoseCtl-window.spec"),
+               encoding="utf-8").read()
+    cli = open(os.path.join(ROOT, "build", "bosectl-console.spec"),
+               encoding="utf-8").read()
+
+    assert 'entry_gui.py' in gui and 'entry_gui' not in cli
+    assert 'entry_cli.py' in cli and 'entry_cli' not in gui
+    assert 'console=False' in gui.replace(" ", "")
+    assert 'console=True' in cli.replace(" ", "")
+
+    # The GUI has to bundle customtkinter's theme assets; the CLI must not,
+    # or it would carry tkinter and Pillow along with it. (Matching on the
+    # excludes list rather than on the word, which the docstrings also use.)
+    assert "collect_data_files" in gui
+    assert "collect_data_files" not in cli
+    assert '"customtkinter"' in cli
+    assert "excludes = [" in cli

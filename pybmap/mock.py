@@ -12,8 +12,8 @@ it so users can explore every feature before pairing a real device.
 
 import time
 
-from .constants import OP_GET, OP_SETGET, OP_START, OP_STATUS, OP_RESULT, OP_ERROR
-from .protocol import parse_all_responses, bmap_packet
+from .constants import OP_ERROR, OP_GET, OP_RESULT, OP_SETGET, OP_START, OP_STATUS
+from .protocol import bmap_packet, parse_all_responses
 from .transport import Transport
 
 # qc_ultra2 address map (mirrors devices/qc_ultra2.py).

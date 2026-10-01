@@ -185,7 +185,7 @@ class View(ctk.CTkFrame):
 
     def grid_cards(self, parent, columns=2, gap=SPACE["md"]):
         """A responsive card grid; returns the container to pack cards into."""
-        t = get_theme()
+        get_theme()
         holder = ctk.CTkFrame(parent, fg_color="transparent")
         holder.pack(fill="x", pady=(0, gap))
         for col in range(columns):

@@ -34,7 +34,9 @@ import sys
 import time
 
 from .errors import (
-    BmapConnectionError, BmapNotFoundError, BmapTimeoutError,
+    BmapConnectionError,
+    BmapNotFoundError,
+    BmapTimeoutError,
 )
 
 __all__ = [

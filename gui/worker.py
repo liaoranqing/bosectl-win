@@ -154,6 +154,7 @@ class DeviceWorker:
 def _default_error_handler(exc, label):
     """Last-resort handler so a missing callback cannot hide a failure."""
     import tkinter.messagebox as mb
+
     from pybmap.messages import error_hint, friendly_error
     message = friendly_error(exc)
     hint = error_hint(exc)

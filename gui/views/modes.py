@@ -12,12 +12,26 @@ import customtkinter as ctk
 
 from pybmap.messages import friendly_error
 
-from ..labels import (PRESET_HINTS, PRESET_LABELS, SPATIAL_LABELS,
-                      SPATIAL_QUOTE_BY_ID, SPATIAL_VALUES)
+from ..labels import (
+    PRESET_HINTS,
+    PRESET_LABELS,
+    SPATIAL_QUOTE_BY_ID,
+)
 from ..theme import RADIUS, SPACE, get_theme
-from ..widgets import (Body, Card, Chip, DropdownRow, EmptyState, EntryRow,
-                       Muted, PageHeader, PrimaryButton, SecondaryButton,
-                       SectionTitle, SliderRow, ToggleRow)
+from ..widgets import (
+    Card,
+    Chip,
+    DropdownRow,
+    EmptyState,
+    EntryRow,
+    Muted,
+    PageHeader,
+    PrimaryButton,
+    SecondaryButton,
+    SectionTitle,
+    SliderRow,
+    ToggleRow,
+)
 from .base import View
 
 #: (label, id) pairs for the profile editor's spatial dropdown, derived from
@@ -45,7 +59,7 @@ class ModesView(View):
     # ── presets ──
 
     def _build_presets(self, page):
-        t = get_theme()
+        get_theme()
         card = Card(page)
         card.pack(fill="x", padx=SPACE["xl"], pady=(0, SPACE["md"]))
         body = card.body
@@ -158,7 +172,7 @@ class ModesView(View):
             EmptyState(self.profile_list, "没有可用的配置信息").pack(fill="x")
             return
 
-        t = get_theme()
+        get_theme()
         editable = sorted([cfg for cfg in modes.values() if cfg.editable],
                           key=lambda c: c.mode_idx)
         used = [cfg for cfg in editable if cfg.configured and cfg.name

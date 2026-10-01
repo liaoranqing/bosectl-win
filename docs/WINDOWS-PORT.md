@@ -189,7 +189,27 @@ GUI and `bosectl.exe --diagnose` on the CLI. When a connection fails below the
 protocol layer, this is the fastest way to tell whether the problem is the
 radio, the pairing, or the model config.
 
-## 5. Installing and running
+## 5. A trap that only shows up in CI: case-insensitive paths
+
+Windows and macOS filesystems treat `build/BoseCtl.spec` and
+`build/bosectl.spec` as *the same file*. Git can therefore only store one of
+them; the other is silently absent from the checkout. On Windows everything
+looks fine — the single file answers to both names — while Linux, where the
+paths really are distinct, fails to find one.
+
+This repository shipped exactly that bug: the two PyInstaller specs were named
+`BoseCtl.spec` and `bosectl.spec`. Both packaging jobs ran the same spec (and
+failed together), and the test suite went red on `ubuntu-latest` only, while
+Windows and macOS stayed green. The fix was to name them
+`BoseCtl-window.spec` and `bosectl-console.spec`, and the class of bug is now
+rejected by `tests/test_version.py::test_no_tracked_paths_collide_by_letter_case`.
+
+The wider lesson for a Windows-first repository: anything that compares or
+keys on paths must assume case-insensitivity, and any test that asserts a file
+exists should be run on Linux once, because that is the only place a
+case-collision becomes visible as a missing file.
+
+## 6. Installing and running
 
 **No runtime dependencies for the library.** The BMAP layer needs only the
 standard library: `ctypes` reaches both Winsock and `bluetoothapis.dll`. There
@@ -208,7 +228,7 @@ directory build with an instant start instead.
 certificate; the build workflow has a documented insertion point for
 `signtool` if you have one.
 
-## 6. Behaviour differences from upstream
+## 7. Behaviour differences from upstream
 
 | Area | Difference |
 | --- | --- |
@@ -219,7 +239,7 @@ certificate; the build workflow has a documented insertion point for
 | Error message language | GUI and CLI print Chinese summaries; the library text is unchanged. |
 | CLI help | `--help` is the Chinese cheat sheet; `--help-raw` is upstream's. |
 
-## 7. Things that are deliberately *not* different
+## 8. Things that are deliberately *not* different
 
 - The BMAP codec, constants, error taxonomy and device configs: copied
   verbatim.

@@ -9,9 +9,18 @@ import customtkinter as ctk
 import pybmap
 
 from .. import resources
-from ..theme import RADIUS, SPACE, get_theme
-from ..widgets import (Body, Card, Chip, Divider, KeyValueRow, Muted,
-                       PageHeader, PrimaryButton, SecondaryButton, SectionTitle)
+from ..theme import SPACE, get_theme
+from ..widgets import (
+    Card,
+    Chip,
+    Divider,
+    KeyValueRow,
+    Muted,
+    PageHeader,
+    PrimaryButton,
+    SecondaryButton,
+    SectionTitle,
+)
 from .base import View
 
 UPSTREAM_URL = "https://github.com/aaronsb/bosectl"

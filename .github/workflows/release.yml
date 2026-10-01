@@ -73,10 +73,10 @@ jobs:
       matrix:
         include:
           - target: gui
-            spec: build/BoseCtl.spec
+            spec: build/BoseCtl-window.spec
             artifact: BoseCtl.exe
           - target: cli
-            spec: build/bosectl.spec
+            spec: build/bosectl-console.spec
             artifact: bosectl.exe
     steps:
       - uses: actions/checkout@v4
