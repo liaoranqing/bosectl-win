@@ -19,6 +19,25 @@ second.
 
 ## Triggering a build
 
+### First publish
+
+The workflows do nothing until the repository exists on GitHub. One command
+handles it:
+
+```bash
+python scripts/publish.py            # create (private) + push, then show the URL
+python scripts/publish.py --public   # public instead of private
+python scripts/publish.py --check    # report the git state, change nothing
+```
+
+With the [`gh` CLI](https://cli.github.com) installed and authenticated it
+creates the repository and pushes; without it, it prints the two manual steps
+(create on github.com, then `git push -u origin main`). It never
+force-pushes.
+
+The push itself is what starts CI — GitHub runs the workflows for commits
+created through the API too, so there is nothing to kick off by hand.
+
 ### On GitHub (the normal path)
 
 | Workflow | When | Result |
