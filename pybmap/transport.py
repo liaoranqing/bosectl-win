@@ -66,9 +66,10 @@ WSAEINPROGRESS = 10036
 WSAENOTSOCK = 10038
 WSAEADDRINUSE = 10048
 WSAEADDRNOTAVAIL = 10049
-WSAEAUNREACHABLE = 10051
+WSAENETUNREACH = 10051
 WSAECONNREFUSED = 10061
 WSAETIMEDOUT = 10060
+WSAEHOSTUNREACH = 10065
 WSAENOTCONN = 10057
 WSAEBUSY = 10016
 WSAEACCES = 10013
@@ -84,22 +85,34 @@ _WSA_TO_ERRNO = {
     WSAETIMEDOUT: errno.ETIMEDOUT,
     WSAENOTCONN: errno.ENOTCONN,
     WSAEADDRNOTAVAIL: errno.EADDRNOTAVAIL,
-    WSAEAUNREACHABLE: errno.EHOSTUNREACH,
+    WSAENETUNREACH: errno.ENETUNREACH,
+    WSAEHOSTUNREACH: errno.EHOSTUNREACH,
     WSAEACCES: errno.EACCES,
     WSAENODEV: errno.ENODEV,
 }
 
 #: Human-readable hints for the codes a user can actually act on.
+#:
+#: These are shown verbatim in the error dialog, so each one has to name the
+#: plausible causes of *that* code on Bluetooth. WSAEADDRNOTAVAIL in
+#: particular does not mean "this PC has no Bluetooth": it was reported here
+#: on a laptop with a working, connectable radio whose only paired device was
+#: a BLE peripheral, because that address cannot host a classic RFCOMM
+#: channel at all. Saying "no adapter found" pointed the user at the one
+#: thing that was not wrong.
 _WSA_HINTS = {
     WSAEBUSY: "另一个程序仍占用该蓝牙通道（通常是刚断开的上一次连接）",
     WSAEADDRINUSE: "该蓝牙通道已被占用，请等待几秒后重试",
     WSAECONNREFUSED: "设备拒绝连接：请确认耳机已与电脑配对、已开机并在范围内",
     WSAETIMEDOUT: "连接超时：请确认蓝牙已开启且耳机处于可连接距离内",
     WSAENOTCONN: "蓝牙链路未连接",
-    WSAEADDRNOTAVAIL: "本机没有可用的蓝牙适配器",
-    WSAEAUNREACHABLE: "无法访问设备，请确认耳机已开机",
+    WSAEADDRNOTAVAIL: (
+        "该地址当前不能用于经典蓝牙连接：设备可能未开机或不在范围内，"
+        "也可能只是以低功耗（BLE）方式配对，本身没有可连接的蓝牙通道"),
+    WSAENETUNREACH: "蓝牙网络不可用：请确认 Windows 蓝牙已开启",
+    WSAEHOSTUNREACH: "无法访问该设备：请确认耳机已开机并在有效范围内",
     WSAEACCES: "权限不足：请在“设置 → 蓝牙和其他设备”中重新配对",
-    WSAENODEV: "未找到蓝牙设备",
+    WSAENODEV: "未找到该蓝牙设备：可能已取消配对，或蓝牙适配器被停用",
 }
 
 

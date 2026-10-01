@@ -156,6 +156,47 @@ def test_unsupported_feature_is_not_fixable():
     assert messages.is_user_fixable(BmapError(NO_AUDIO)) is False
 
 
+# ── connection failures need a cause-specific hint ───────────────────────────
+
+#: What the user actually saw when connecting to a paired device that turned
+#: out not to be a Bose headphone at all.
+UNREACHABLE_ADDRESS = (
+    "No BMAP channel found on D7:41:3D:1F:F2:68 (tried 2, 8, 9): "
+    "连接 D7:41:3D:1F:F2:68 通道 2 失败: 该地址当前不能用于经典蓝牙连接："
+    "设备可能未开机或不在范围内，也可能只是以低功耗（BLE）方式配对，"
+    "本身没有可连接的蓝牙通道 (WSA 10049)")
+
+
+def test_unreachable_address_gets_a_pairing_hint():
+    """The generic "check Bluetooth is on" text is not enough here.
+
+    The failure means "there is nothing to connect to at that address", and
+    the fix is to pair the headphones — so the hint has to say that rather
+    than repeat the checks the user already did.
+    """
+    hint = messages.error_hint(BmapConnectionError(UNREACHABLE_ADDRESS))
+    assert hint
+    assert "配对" in hint
+    assert "已连接" in hint
+
+
+def test_busy_beats_the_text_hint():
+    """A busy error must keep its own hint, not be caught by the text table."""
+    hint = messages.error_hint(BmapBusyError("Headphones busy: try again"))
+    assert "5 秒" in hint
+
+
+def test_plain_connection_error_has_no_text_hint():
+    assert messages.error_hint(BmapConnectionError("Device is off")) == ""
+
+
+def test_text_hints_are_well_formed():
+    for needle, hint in messages._TEXT_HINTS:
+        assert needle and hint
+        assert _has_cjk(needle) or "Bose" in needle
+        assert _has_cjk(hint)
+
+
 # ── the table cannot rot ─────────────────────────────────────────────────────
 
 def _tree_sources():

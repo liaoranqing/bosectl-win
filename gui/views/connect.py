@@ -122,6 +122,16 @@ class ConnectView(View):
         self.scan_meta.configure(
             text="共 %d 台设备，其中 %d 台识别为 Bose。" % (len(devices), len(bose)))
 
+        if not bose and others:
+            # The most common first-run situation, and the one that produces
+            # a bewildering "cannot establish BMAP communication" later: the
+            # headphones were never paired to this PC, so the only device on
+            # offer is something else entirely.
+            self._set_banner(
+                "已配对的设备里没有 Bose 耳机。如果你的耳机还没和这台电脑配对，"
+                "请先到「设置 → 蓝牙和其他设备 → 添加设备」完成配对，再点「重新扫描」。",
+                "warning")
+
         for device in bose:
             self._device_row(device, highlight=True)
         if others:
@@ -152,6 +162,9 @@ class ConnectView(View):
             Chip(name_row, "已连接", "success").pack(side="left", padx=(SPACE["sm"], 0))
         elif device.get("paired"):
             Chip(name_row, "已配对", "neutral").pack(side="left", padx=(SPACE["sm"], 0))
+        if not device.get("bose"):
+            Chip(name_row, "未识别为 Bose", "warning").pack(
+                side="left", padx=(SPACE["sm"], 0))
 
         detail = device.get("mac", "")
         if device.get("product_id"):
@@ -161,10 +174,22 @@ class ConnectView(View):
             detail += " · 识别为 %s" % DEVICE_LABELS.get(suggested, suggested)
         Muted(info, detail, "micro").pack(anchor="w")
 
+        # Say why the row is under "other devices" rather than leaving the
+        # user to work it out from a failed connection. A device with no Bose
+        # product ID is usually a phone, a BLE peripheral or a headset that
+        # only ever paired in low-energy mode — none of which expose a BMAP
+        # channel, so connecting is guaranteed to fail.
+        if not device.get("bose"):
+            Muted(info,
+                  "没有读到 Bose 产品 ID：可能不是 Bose 耳机，或只是以低功耗"
+                  "（BLE）方式配对，本身没有可控制的蓝牙通道。",
+                  "micro", wraplength=520).pack(anchor="w")
+
         suggested = device.get("suggested_type")
         PrimaryButton(
             row, "连接",
-            lambda: self._connect(device.get("mac", ""), suggested),
+            lambda: self._connect(device.get("mac", ""), suggested,
+                                  recognized=bool(device.get("bose"))),
             width=76, height=30).pack(side="right", padx=SPACE["md"], pady=SPACE["sm"])
 
     # ── manual ──
@@ -244,11 +269,19 @@ class ConnectView(View):
         except (ValueError, IndexError):
             return 6.0
 
-    def _connect(self, mac, device_type):
+    def _connect(self, mac, device_type, recognized=True):
         if not mac:
             self._set_banner("这台设备没有可用地址，请手动填写。", "warning")
             return
-        self._set_banner("正在连接 %s…" % mac, "info")
+        if not recognized:
+            # Try anyway — product-ID detection can fail on a perfectly good
+            # headset — but say up front that this is likely the wrong device,
+            # so the failure that follows is not a surprise.
+            self._set_banner(
+                "该设备没有被识别为 Bose 耳机，BMAP 通信大概率不可用；"
+                "仍将尝试连接 %s…" % mac, "warning")
+        else:
+            self._set_banner("正在连接 %s…" % mac, "info")
         self.app.connect(mac=mac, device_type=device_type or "qc_ultra2")
 
     # ── help ──

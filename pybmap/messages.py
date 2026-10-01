@@ -20,6 +20,7 @@ rot into a list of typos.
 from .errors import (
     BmapAuthError,
     BmapBusyError,
+    BmapConnectionError,
     BmapDesyncError,
     BmapDeviceError,
     BmapError,
@@ -143,6 +144,17 @@ _HINTS = {
     BmapDesyncError: "提示：断开后重新连接即可恢复。",
 }
 
+#: Hints that only make sense for a phrase inside the message text, checked
+#: after the type-based table so they cannot shadow it.
+_TEXT_HINTS = (
+    ("该地址当前不能用于经典蓝牙连接",
+     "提示：这条地址很可能不是可控制的 Bose 耳机。请在「设置 → 蓝牙和其他设备」"
+     "里确认耳机显示为「已连接」，并在本页列表中带 Bose 标记；"
+     "如果列表里没有 Bose 设备，说明耳机还没有和这台电脑配对。"),
+    ("需要 Bose 云端鉴权",
+     "提示：这是固件限制，换用 Bose 官方应用也做不了同样的操作。"),
+)
+
 #: Translated phrases that mean "retrying will not help".
 _NOT_FIXABLE = ("需要 Bose 云端鉴权", "不支持此功能", "不能单独开关",
                 "不能修改", "不能删除", "槽位已满", "请换一个名称",
@@ -192,6 +204,15 @@ def error_hint(exc):
         return "提示：请检查设备型号和蓝牙地址是否填写正确。"
     if isinstance(exc, BmapDeviceError):
         return "提示：该设置项可能被固件锁定，或需要先在 Bose 应用中启用。"
+
+    # Type alone is not enough for a connection failure: "the headphones are
+    # not paired" and "the radio is off" need different fixes, and only the
+    # translated text distinguishes them.
+    if isinstance(exc, BmapConnectionError):
+        message = friendly_error(exc)
+        for needle, hint in _TEXT_HINTS:
+            if needle in message:
+                return hint
     return ""
 
 

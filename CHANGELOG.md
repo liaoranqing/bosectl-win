@@ -78,6 +78,21 @@ First Windows release. Based on upstream bosectl 0.5.0.
 
 ### Fixed
 
+- **`WSAEADDRNOTAVAIL` no longer claims the PC has no Bluetooth.** The hint
+  for Winsock 10049 read "no Bluetooth adapter available", which sent users to
+  check the one thing that was not wrong. It was reported from a laptop with a
+  working, connectable radio whose only paired device was a Bluetooth Low
+  Energy peripheral — an address that cannot host a classic RFCOMM channel at
+  all. The text now names the real causes (powered off, out of range, or only
+  paired in LE mode), and a connection error carrying it gets a hint pointing
+  at pairing rather than at the radio.
+- **`WSAEAUNREACHABLE` was not a Winsock name.** Code 10051 is
+  `WSAENETUNREACH`; 10065 (`WSAEHOSTUNREACH`) was missing. The hint for 10051
+  now blames the stack, not the device.
+- **Devices that are not Bose headphones are labelled as such before you try
+  to connect.** The connect page marks the row and says why, and clicking
+  connect warns first instead of failing with a message about BMAP
+  communication.
 - **Case-colliding artefact names.** `BoseCtl.exe` and `bosectl.exe`
   lower-case to the same string, so on Windows and macOS they are one file.
   The checksum-verification job merges both CI artefacts into a single

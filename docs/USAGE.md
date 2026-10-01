@@ -192,7 +192,9 @@ problem is below or above the protocol layer.
 | 设备正忙 | The previous link has not been released, or a phone holds the channel. Wait ~5 s; disconnect the headphones from the phone. |
 | 设备拒绝连接 | Not paired, powered off, or out of range. Confirm 已连接 in Windows settings. |
 | 连接超时 | The headset is asleep. Trigger it once, or raise 连接超时 to 12/20 s. |
+| `WSA 10049`（该地址当前不能用于经典蓝牙连接） | There is nothing to connect to at that address. Either the headphones are off / out of range, or the device was only ever paired in Bluetooth Low Energy mode and therefore has no classic RFCOMM channel — common when earbuds are first paired by a phone app. Check that 已连接 (not just 已配对) appears in 设置 → 蓝牙和其他设备, and re-pair through Windows if only the LE side is listed. |
 | 未找到已配对的 Bose 设备 | Not paired, or the name contains nothing identifying. Use 手动连接. |
+| A paired device shows 未识别为 Bose | No Bose product ID was readable, so it is almost certainly not a Bose headphone — or only its low-energy side is paired. Controlling it will not work; pair the headphones properly first. |
 | Empty scan list | `--diagnose`. Check the radio and pairing state. |
 | Works, then stops after a while | The headset dropped the link (idle timeout or another device took it). Reconnect; `BmapDesyncError` means a reconnect is genuinely required rather than a retry. |
 | No EQ / spatial controls | Hardware limitation (e.g. QC35 generation). Controls are disabled by design. |

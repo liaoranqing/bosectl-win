@@ -101,6 +101,48 @@ class TestErrorMapping:
         assert "9999" in text
 
 
+class TestAddressNotAvailableHint:
+    """WSAEADDRNOTAVAIL is the code a user is most likely to actually hit.
+
+    It was first written as "this PC has no Bluetooth adapter", which sent the
+    user to check the one thing that was not wrong: the report came from a
+    laptop with a working, connectable radio whose only paired device was a
+    BLE peripheral — an address that cannot host a classic RFCOMM channel at
+    all. The hint has to name the plausible causes instead of guessing one.
+    """
+
+    def test_does_not_blame_the_local_adapter(self):
+        text = transport.describe_wsa_error(transport.WSAEADDRNOTAVAIL)
+        assert "没有可用的蓝牙适配器" not in text
+        assert "10049" in text
+
+    def test_names_the_real_causes(self):
+        text = transport.describe_wsa_error(transport.WSAEADDRNOTAVAIL)
+        # Out of range / powered off, and nothing to connect to.
+        assert "未开机" in text or "不在范围内" in text
+        assert "BLE" in text or "低功耗" in text
+
+    def test_reachability_codes_are_named_correctly(self):
+        """10051 is WSAENETUNREACH and 10065 is WSAEHOSTUNREACH.
+
+        The constant was previously called ``WSAEAUNREACHABLE`` — a name that
+        exists nowhere in Winsock — which made the hint read as if the device
+        were at fault when the stack is what is down.
+        """
+        assert transport.WSAENETUNREACH == 10051
+        assert transport.WSAEHOSTUNREACH == 10065
+        assert not hasattr(transport, "WSAEAUNREACHABLE")
+        assert "蓝牙已开启" in transport.describe_wsa_error(
+            transport.WSAENETUNREACH)
+        assert "范围内" in transport.describe_wsa_error(
+            transport.WSAEHOSTUNREACH)
+
+    def test_every_hint_is_reachable_and_non_empty(self):
+        for code, hint in transport._WSA_HINTS.items():
+            assert hint.strip(), code
+            assert transport.describe_wsa_error(code).startswith(hint)
+
+
 # ── backend selection ────────────────────────────────────────────────────────
 
 class TestCreateTransport:
