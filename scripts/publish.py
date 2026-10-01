@@ -158,6 +158,14 @@ def main(argv=None):
         print("  https://github.com/%s/%s/actions" % (args.owner, args.name))
         return 0
     else:
+        # No gh, no explicit URL: make sure origin points where we intend
+        # before pushing, so a fresh clone (which has no remote yet) does
+        # not fail with "No configured push destination".
+        if state["remote"] and state["remote"] != repo_url:
+            run("git", "remote", "set-url", "origin", repo_url, check=True)
+        elif not state["remote"]:
+            run("git", "remote", "add", "origin", repo_url, check=True)
+            print("\n已设置 origin → %s" % repo_url)
         head = ["git", "push", "-u", "origin", state["branch"]]
 
     print("\n执行：%s" % " ".join(head))

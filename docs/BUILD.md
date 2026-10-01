@@ -35,6 +35,12 @@ creates the repository and pushes; without it, it prints the two manual steps
 (create on github.com, then `git push -u origin main`). It never
 force-pushes.
 
+**With GitHub Desktop instead:** *File → Add local repository*, point it at
+this folder, then click **Publish repository**. GitHub Desktop adds the
+`origin` remote itself, so the repository must not already have one — a
+pre-configured `origin` makes it offer "Push origin" (which fails, because
+that remote does not exist yet) instead of "Publish repository".
+
 The push itself is what starts CI — GitHub runs the workflows for commits
 created through the API too, so there is nothing to kick off by hand.
 
