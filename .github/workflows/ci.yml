@@ -1,0 +1,146 @@
+name: CI
+
+# Runs on every push and pull request. The goals are narrow and in order of
+# importance:
+#
+#   1. The version numbers agree everywhere (the release path depends on it).
+#   2. The full test suite passes on Windows, across supported Pythons.
+#   3. The library still imports and behaves on Linux/macOS, so this port
+#      stays a *port* and not a fork that has drifted.
+#
+# Packaging is not done here; see build.yml and release.yml.
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["v*"]        # tags are handled by release.yml
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A new push supersedes an in-flight run on the same ref.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }} / Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows is the product; cover the whole supported range there.
+          - os: windows-latest
+            python: "3.9"
+          - os: windows-latest
+            python: "3.11"
+          - os: windows-latest
+            python: "3.13"
+          # The library half must still work elsewhere. The Windows-only
+          # transport and discovery tests skip themselves on other platforms.
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: macos-latest
+            python: "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Report environment
+        run: |
+          python -c "import sys, platform; print(sys.version); print(platform.platform())"
+
+      - name: Check version consistency
+        run: python scripts/check_version.py
+
+      - name: Compile every module
+        run: python -m compileall -q pybmap gui tests scripts build
+
+      - name: Run test suite
+        # Integration tests need paired hardware and are opt-in via
+        # `pytest --integration`; they are skipped here.
+        run: python -m pytest tests -q
+
+      - name: Smoke-test the library on the simulated device
+        shell: bash
+        run: |
+          python -c "
+          import pybmap
+          with pybmap.connect(mock=True) as dev:
+              status = dev.status()
+              assert status.battery == 87, status.battery
+              dev.set_cnc(8); assert dev.cnc()[0] == 8
+              dev.set_eq(3, 0, -2)
+              bands = {b.name: b.current for b in dev.eq()}
+              assert bands == {'Bass': 3, 'Mid': 0, 'Treble': -2}, bands
+              dev.set_mode('aware'); assert dev.mode() == 'aware'
+              print('library smoke test OK')
+          "
+
+      - name: Smoke-test the CLI wrapper
+        shell: bash
+        run: |
+          python cli.py --version
+          python cli.py --help > /dev/null
+          python cli.py --mock status
+          python cli.py --mock battery
+
+  gui:
+    name: GUI smoke test (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Import every GUI module
+        # Catches a typo or a bad customtkinter API call without needing a
+        # window, which is the failure mode a headless runner can still see.
+        run: python -c "import gui; import gui.app; import gui.views; print('gui imports OK')"
+
+      - name: Build and drive the whole interface against the mock device
+        # tests/test_gui_smoke.py creates the real window, connects to the
+        # simulated headset, and visits every page. It skips itself when Tk
+        # cannot initialise, so it never turns a headless runner red.
+        run: python -m pytest tests/test_gui_smoke.py -v
+
+  lint:
+    name: Lint (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true     # style never blocks a merge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - name: ruff check
+        run: ruff check pybmap gui tests scripts cli.py bosectl.py
+      - name: ruff format --diff
+        run: ruff format --diff pybmap gui cli.py bosectl.py || true

@@ -1,0 +1,210 @@
+name: Build Windows executables
+
+# Produces the shippable artefacts on GitHub's Windows runners, so nobody
+# needs a local Windows toolchain to get a runnable build:
+#
+#   BoseCtl.exe   windowed desktop app (one file, no install)
+#   bosectl.exe   console CLI (one file, no install)
+#
+# Artifacts are attached to the workflow run. Tagged pushes additionally get
+# a GitHub Release via release.yml.
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep PyInstaller quiet about the progress bar in CI logs.
+  PYTHONUTF8: "1"
+
+jobs:
+  build:
+    name: Package (${{ matrix.target }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: gui
+            spec: build/BoseCtl.spec
+            artifact: BoseCtl.exe
+            smoke: BoseCtl
+          - target: cli
+            spec: build/bosectl.spec
+            artifact: bosectl.exe
+            smoke: bosectl
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Verify version consistency
+        run: python scripts/check_version.py
+
+      - name: Regenerate the application icon
+        # build/icon.ico is a generated artefact and is not committed, so
+        # both specs need it rasterised before PyInstaller runs. Doing it
+        # here also guarantees the released icon matches the script.
+        run: python build/make_icon.py
+
+      - name: Build ${{ matrix.artifact }}
+        run: pyinstaller --clean --noconfirm ${{ matrix.spec }}
+
+      - name: Confirm the executable exists
+        shell: pwsh
+        run: |
+          $exe = "dist/${{ matrix.artifact }}"
+          if (-not (Test-Path $exe)) { throw "missing $exe" }
+          $item = Get-Item $exe
+          "built $($item.Name)  $([math]::Round($item.Length / 1MB, 2)) MB"
+
+      - name: Smoke-test the console build
+        if: matrix.target == 'cli'
+        shell: pwsh
+        run: |
+          # A frozen console binary must produce usable output with no
+          # Python on PATH assumptions and no console-mode surprises.
+          $exe = "dist/bosectl.exe"
+          & $exe --version
+          if ($LASTEXITCODE -ne 0) { throw "--version failed ($LASTEXITCODE)" }
+
+          & $exe --help | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "--help failed ($LASTEXITCODE)" }
+
+          # Drive the simulated device end to end through the frozen binary.
+          $status = & $exe --mock status
+          $status | Write-Host
+          if ($LASTEXITCODE -ne 0) { throw "--mock status failed ($LASTEXITCODE)" }
+          if (-not ($status -match "Battery")) { throw "no battery line in status output" }
+
+          $battery = & $exe --mock battery
+          if ($LASTEXITCODE -ne 0) { throw "--mock battery failed ($LASTEXITCODE)" }
+          "battery reported: $battery"
+
+          & $exe --mock cnc 8
+          & $exe --mock quiet
+          & $exe --mock eq 3 0 -2
+          if ($LASTEXITCODE -ne 0) { throw "write commands failed" }
+
+      - name: Smoke-test the windowed build
+        if: matrix.target == 'gui'
+        shell: pwsh
+        run: |
+          # Start the real GUI against the simulated device, give it time to
+          # finish constructing every view, then require it to still be
+          # alive. Windows runners have a window station, so Tk initialises;
+          # a crash-on-launch (missing theme assets, a bad widget argument)
+          # shows up here rather than in a user's first run.
+          $exe = Resolve-Path "dist/BoseCtl.exe"
+          $proc = Start-Process -FilePath $exe -ArgumentList "--demo" -PassThru
+          Start-Sleep -Seconds 20
+          $proc.Refresh()
+          if ($proc.HasExited) {
+            throw "BoseCtl.exe exited during startup with code $($proc.ExitCode)"
+          }
+          "BoseCtl.exe still running after 20s (pid $($proc.Id))"
+          Stop-Process -Id $proc.Id -Force
+
+      - name: Record the checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "dist/${{ matrix.artifact }}" -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.artifact }}" | Out-File -Encoding ascii "dist/${{ matrix.artifact }}.sha256"
+          Get-Content "dist/${{ matrix.artifact }}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-${{ github.sha }}
+          path: |
+            dist/${{ matrix.artifact }}
+            dist/${{ matrix.artifact }}.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  verify:
+    name: Verify packaged output
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download both builds
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List the packaged files
+        shell: pwsh
+        run: Get-ChildItem dist -Recurse | Select-Object Name, Length
+
+      - name: Verify SHA256 sums
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem dist -Filter *.sha256 | ForEach-Object {
+            $expected = ((Get-Content $_.FullName -Raw).Trim() -split '\s+')[0]
+            $target = Join-Path $_.DirectoryName $_.BaseName
+            $actual = (Get-FileHash $target -Algorithm SHA256).Hash.ToLower()
+            if ($expected -ne $actual) {
+              Write-Error "checksum mismatch for $target"
+              $failed = $true
+            } else {
+              "OK  $($_.BaseName)"
+            }
+          }
+          if ($failed) { throw "checksum verification failed" }
+
+      - name: Confirm the CLI binary carries the release version
+        shell: pwsh
+        run: |
+          $version = (Get-Item dist/bosectl.exe).VersionInfo
+          "FileVersion    = $($version.FileVersion)"
+          "ProductName    = $($version.ProductName)"
+          if (-not $version.FileVersion) { throw "no version resource embedded" }
+          $expected = (python -c "import pybmap; print(pybmap.__version__)").Trim()
+          if (-not $version.FileVersion.StartsWith($expected)) {
+            throw "embedded version $($version.FileVersion) does not start with $expected"
+          }
+
+      - name: Confirm the GUI binary is windowed, not console
+        shell: pwsh
+        run: |
+          # IMAGE_SUBSYSTEM_WINDOWS_GUI = 2, IMAGE_SUBSYSTEM_WINDOWS_CUI = 3.
+          # A console subsystem here means every launch flashes a black box.
+          $path = Resolve-Path "dist/BoseCtl.exe"
+          $stream = [System.IO.File]::OpenRead($path)
+          try {
+            $reader = New-Object System.IO.BinaryReader($stream)
+            $stream.Seek(0x3C, "Begin") | Out-Null
+            $peOffset = $reader.ReadInt32()
+            $stream.Seek($peOffset + 0x5C, "Begin") | Out-Null
+            $subsystem = $reader.ReadUInt16()
+          } finally { $stream.Dispose() }
+          "PE subsystem = $subsystem"
+          if ($subsystem -ne 2) { throw "BoseCtl.exe is not a windowed binary" }

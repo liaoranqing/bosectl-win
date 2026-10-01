@@ -1,0 +1,23 @@
+# Development and packaging dependencies.
+#
+#   pip install -r requirements-dev.txt
+#
+# Python 3.9+ is required; the CI matrix covers 3.9 through 3.13 on Windows.
+
+-r requirements.txt
+
+# Tests.
+pytest>=7.0
+pytest-cov>=4.1
+
+# Packaging into Windows executables (see build/*.spec).
+pyinstaller>=6.0
+pyinstaller-hooks-contrib>=2024.0
+
+# build/make_icon.py rasterises the app icon; Pillow is also a GUI runtime
+# dependency, so it is already in requirements.txt - repeated here so this
+# file is self-explanatory.
+pillow>=9.0
+
+# Linting (optional; CI runs it in a separate, non-blocking job).
+ruff>=0.5

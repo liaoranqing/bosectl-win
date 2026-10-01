@@ -1,0 +1,68 @@
+# NOTICE
+
+## Upstream project
+
+This repository is a **Windows port** of
+[bosectl](https://github.com/aaronsb/bosectl) by **Aaron Bockelie**,
+distributed under the MIT License.
+
+The BMAP reverse-engineering work — the protocol framing, the register
+addresses, the per-model quirks, the device catalog — is entirely upstream's
+work. This port only changes *how bytes reach the headphones on Windows*, plus
+the user interface around it.
+
+### Files copied essentially verbatim from upstream
+
+These files are taken from upstream and kept as close to identical as the
+line-ending policy allows, so that a diff against upstream stays meaningful
+and future upstream fixes can be merged by inspection:
+
+| This repository | Upstream path |
+| --- | --- |
+| `pybmap/protocol.py` | `python/pybmap/protocol.py` |
+| `pybmap/constants.py` | `python/pybmap/constants.py` |
+| `pybmap/types.py` | `python/pybmap/types.py` |
+| `pybmap/errors.py` | `python/pybmap/errors.py` |
+| `pybmap/catalog.py` | `python/pybmap/catalog.py` |
+| `pybmap/connection.py` | `python/pybmap/connection.py` |
+| `pybmap/cli.py` | `python/pybmap/cli.py` |
+| `pybmap/devices/` (all modules) | `python/pybmap/devices/` |
+| `fixtures/packets/` | `fixtures/packets/` |
+| `tests/test_*.py` (most) | `python/tests/test_*.py` |
+
+The upstream release this port tracks is recorded in
+`pybmap.UPSTREAM_VERSION`.
+
+### Files written for this port
+
+| Path | What changed and why |
+| --- | --- |
+| `pybmap/transport.py` | Rewritten. Upstream uses `AF_BLUETOOTH` sockets (Linux) or IOBluetooth (macOS); Windows exposes Bluetooth only through Winsock, so this is a `ctypes` binding to `ws2_32.dll` using `AF_BTH` / `BTHPROTO_RFCOMM`. Byte-pipe semantics, error types and `errno` reporting are preserved so the channel-probing logic above it is unchanged. |
+| `pybmap/discovery.py` | Rewritten. Upstream shells out to `bluetoothctl` and reads the device's `Modalias`. Windows has no equivalent, so the paired-device list comes from `BTHPORT\Parameters\Devices`, live state from `bluetoothapis.dll`, and the product ID from SetupAPI PnP hardware IDs. |
+| `pybmap/messages.py` | Added. Localises the (deliberately unchanged) upstream error strings for the GUI and CLI. |
+| `pybmap/__init__.py` | Adapted. Same `connect()` contract and the same channel-probing logic as upstream, with the transport factory and auto-detection swapped to the Windows implementations. |
+| `pybmap/mock.py` | Added. An in-memory BMAP device so the GUI, CLI and tests run with no hardware. |
+| `pybmap/devices/__init__.py` | One addition: the two QC35 product IDs (`0x400C`, `0x4020`) are registered so the legacy generation is auto-detected. Upstream left this as a `TODO`. |
+| `gui/` | Added. The desktop front end (CustomTkinter). |
+| `cli.py`, `bosectl.py` | Added. Windows console entry point and a unified dev entry point. |
+| `build/` | Added. Icon generation, PyInstaller specs, Windows version resource. |
+| `.github/workflows/` | Added. CI, packaging and release pipelines. |
+| `docs/` | Added. |
+
+## Third-party dependencies
+
+| Package | License | Used for |
+| --- | --- | --- |
+| [customtkinter](https://github.com/TomSchimansky/CustomTkinter) | MIT | Themed tkinter widgets for the desktop app |
+| [darkdetect](https://github.com/albertosottile/darkdetect) | BSD-3-Clause | Following the Windows light/dark setting |
+| [Pillow](https://python-pillow.org/) | MIT-CMU | Icon generation; customtkinter image support |
+| [packaging](https://github.com/pypa/packaging) | Apache-2.0 / BSD-2-Clause | Version handling in customtkinter |
+| [PyInstaller](https://pyinstaller.org/) | GPL-2.0-or-later with a bootloader exception | Packaging (build time only, not linked into the distributed work in a way that affects its licensing) |
+
+## Protocol notice
+
+As upstream states: this is not an exploit. The tools use the BMAP protocol's
+standard `SETGET` operator, which the headphones accept without
+authentication. No keys are extracted, no encryption is broken, and no
+traffic is replayed. Bose, QuietComfort and related marks are trademarks of
+Bose Corporation. This project is not affiliated with or endorsed by Bose.

@@ -1,0 +1,16 @@
+# Runtime dependencies.
+#
+# The BMAP library itself (pybmap) needs NOTHING beyond the Python standard
+# library: the Windows Bluetooth transport is a ctypes binding straight to
+# ws2_32.dll (Winsock RFCOMM) and to bluetoothapis.dll for enumeration.
+# There is no PyBluez, no native extension, no build step.
+#
+# The desktop front end is the only part with a dependency.
+
+# Desktop GUI. Provides the themed widgets, DPI scaling and dark mode.
+customtkinter>=5.2,<7
+
+# Pulled in by customtkinter; listed so a pinned install is reproducible.
+darkdetect>=0.7
+packaging>=21.0
+pillow>=9.0

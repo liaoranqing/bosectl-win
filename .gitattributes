@@ -1,0 +1,35 @@
+# Normalise line endings.
+#
+# The library sources are copied from upstream, which is developed on Linux
+# and uses LF. Keeping LF in the repository makes diffs against upstream
+# meaningful: the port should show up as a small, reviewable delta rather
+# than "every line changed". Windows tooling that needs CRLF (batch files)
+# is listed explicitly.
+
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.pyi   text eol=lf
+*.md    text eol=lf
+*.rst   text eol=lf
+*.toml  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.txt   text eol=lf
+*.spec  text eol=lf
+
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Binary assets must never be line-ending-converted.
+*.ico   binary
+*.png   binary
+*.jpg   binary
+*.exe   binary
+*.dll   binary
+
+# Keep GitHub's language stats honest: these are vendored data captures,
+# not project source.
+fixtures/packets/** linguist-vendored

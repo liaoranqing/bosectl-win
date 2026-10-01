@@ -1,0 +1,54 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# PyInstaller
+build/BoseCtl/
+build/bosectl/
+build/pyi-*/
+dist/
+*.manifest
+
+# Packaging / metadata
+*.egg-info/
+.eggs/
+build/lib/
+build/bdist*/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editors and OS cruft
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Project-specific scratch
+*.log
+/tmp/
+/scratch/
+build/version_info.txt
+
+# Generated assets — run `python build/make_icon.py`, or let the packaging
+# workflow do it. Committing them would mean reviewing a binary diff every
+# time the glyph is tweaked.
+build/icon.ico
+build/icon.png

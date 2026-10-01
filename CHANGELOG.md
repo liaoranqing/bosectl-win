@@ -1,0 +1,90 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+The release workflow extracts the section matching the pushed tag to build
+the GitHub Release notes, so each released version needs a `## [x.y.z]`
+heading here.
+
+## [1.0.0] - 2026-10-01
+
+First Windows release. Based on upstream bosectl 0.5.0.
+
+### Added
+
+- **Windows RFCOMM transport** (`pybmap/transport.py`). A dependency-free
+  `ctypes` binding to Winsock's Bluetooth extensions (`AF_BTH`,
+  `BTHPROTO_RFCOMM`). No PyBluez, no native extension, no build step.
+  - Non-blocking connect bounded by `select()`, because a blocking RFCOMM
+    connect ignores `SO_SNDTIMEO` and can hang for ~30 s on a powered-off
+    headset.
+  - Winsock `WSA*` codes are translated to the matching `errno` values, so
+    the channel-probing and busy-retry logic above it behaves exactly as it
+    does on Linux.
+  - Pre-request drain of stale bytes, mirroring upstream, so a late reply
+    cannot be read as the answer to the next request.
+- **Windows device discovery** (`pybmap/discovery.py`). Replaces
+  `bluetoothctl`:
+  - paired devices from `HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices`
+    (no elevation needed, works inside a frozen EXE);
+  - live connected/authenticated state from `bluetoothapis.dll`;
+  - the Bose product ID from SetupAPI PnP hardware IDs — the Windows
+    equivalent of Linux's Modalias, and what makes model auto-detection
+    work;
+  - optional WinRT enumeration when the projections are installed.
+- **Desktop application** (`gui/`). CustomTkinter front end with a Windows 11
+  layout: in-window header, navigation rail, status bar, per-monitor DPI
+  awareness, taskbar identity, light/dark following the Windows setting, and
+  a persisted window geometry. Six pages: 连接, 声音, 模式, 设备, 高级, 关于.
+- **Demo mode.** An in-memory simulated headset drives the entire UI, so the
+  app is explorable with no hardware and CI can exercise it end to end.
+- **All device I/O on one background thread** (`gui/worker.py`). The Tk loop
+  never blocks and requests are serialised, so dragging a slider cannot
+  corrupt the reply to a concurrent read.
+- **Windows console entry point** (`cli.py`): enables ANSI colours (which
+  Windows consoles need an explicit opt-in for), localised `--help`,
+  `--diagnose`, `--mac/--device/--timeout` flags mapped onto the environment
+  variables upstream already reads, and Chinese summaries for failures.
+- **Chinese error localisation** (`pybmap/messages.py`). The library's
+  exception text stays byte-for-byte upstream English; translation happens
+  one layer up, and the original line is always preserved underneath.
+- **Packaging** (`build/`): PyInstaller specs for a windowed `BoseCtl.exe`
+  and a console `bosectl.exe`, generated icon, Windows version resource, and
+  a version-consistency checker.
+- **CI/CD** (`.github/workflows/`): test matrix (Windows 3.9-3.13, plus
+  Linux and macOS for the library half), a build workflow that packages and
+  smoke-tests both executables, and a release workflow triggered by a tag
+  that validates the version, builds, verifies, and publishes.
+- **Tests**: upstream's suite runs unmodified, plus suites for the
+  transport, discovery, message localisation, packaging layout, and a full
+  GUI smoke test that builds the real window against the mock device.
+
+### Changed
+
+- `pybmap/__init__.py` keeps upstream's `connect()` contract and its
+  channel-probing logic, with the transport factory and auto-detection
+  swapped to the Windows implementations. `connect()` additionally accepts
+  `backend`, `mock` and `timeout`, and reads `BMAP_TIMEOUT`.
+- The per-model device configurations (`pybmap/devices/`) were restored to
+  upstream verbatim. An earlier draft of this port had simplified them,
+  which broke the QC35 generation in particular (wrong RFCOMM channel, no
+  init packet, missing features).
+- One addition to `pybmap/devices/__init__.py`: the two QC35 product IDs
+  are registered so the legacy generation is auto-detected. Upstream left
+  this as a `TODO`.
+
+### Known limitations
+
+- The QC35 generation has no EQ, no spatial audio and no modes; the UI greys
+  out those controls rather than failing on click.
+- Operations the firmware gates behind cloud authentication (renaming,
+  button remapping on some models) are reported as unsupported. This is
+  upstream's constraint, not a port regression: `SETGET` and `START` remain
+  unauthenticated and cover the user-facing settings.
+- The executables are unsigned, so Windows SmartScreen shows a warning on
+  first run.
+
+[1.0.0]: https://github.com/liaoranqing/bosectl-win/releases/tag/v1.0.0
