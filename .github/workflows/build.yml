@@ -68,7 +68,7 @@ jobs:
         run: python build/make_icon.py
 
       - name: Build ${{ matrix.artifact }}
-        run: pyinstaller --clean --noconfirm ${{ matrix.spec }}
+        run: pyinstaller --clean --noconfirm --workpath build/work --distpath dist ${{ matrix.spec }}
 
       - name: Confirm the executable exists
         shell: pwsh

@@ -5,6 +5,15 @@ __pycache__/
 *.so
 
 # PyInstaller
+#
+# Both jobs pass --workpath build/work explicitly, so there is one directory
+# to ignore regardless of which spec ran. The per-spec defaults
+# (build/<spec-stem>/) are listed too, for anyone building locally without
+# the flag — note that they follow the spec *file* name, which is why they
+# had to change when the specs were renamed.
+build/work/
+build/BoseCtl-window/
+build/bosectl-console/
 build/BoseCtl/
 build/bosectl/
 build/pyi-*/

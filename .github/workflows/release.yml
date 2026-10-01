@@ -99,7 +99,7 @@ jobs:
         run: python build/make_icon.py
 
       - name: Build
-        run: pyinstaller --clean --noconfirm ${{ matrix.spec }}
+        run: pyinstaller --clean --noconfirm --workpath build/work --distpath dist ${{ matrix.spec }}
 
       - name: Smoke-test the console build
         if: matrix.target == 'cli'

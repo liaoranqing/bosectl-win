@@ -84,8 +84,8 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 
 python build/make_icon.py                   # regenerate build/icon.ico
-pyinstaller --clean --noconfirm build/BoseCtl-window.spec
-pyinstaller --clean --noconfirm build/bosectl-console.spec
+pyinstaller --clean --noconfirm --workpath build/work --distpath dist build/BoseCtl-window.spec
+pyinstaller --clean --noconfirm --workpath build/work --distpath dist build/bosectl-console.spec
 
 dist\BoseCtl.exe --demo
 dist\bosectl.exe --mock status
