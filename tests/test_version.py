@@ -225,3 +225,66 @@ def test_windowed_spec_is_windowed_and_console_spec_is_console():
     assert "collect_data_files" not in cli
     assert '"customtkinter"' in cli
     assert "excludes = [" in cli
+
+
+# ── build outputs must be distinguishable on a case-insensitive filesystem ───
+
+def _spec_executables():
+    """Map each build spec to the .exe name it will produce."""
+    build_dir = os.path.join(ROOT, "build")
+    produced = {}
+    for filename in sorted(os.listdir(build_dir)):
+        if not filename.endswith(".spec"):
+            continue
+        source = open(os.path.join(build_dir, filename), encoding="utf-8").read()
+        match = re.search(r'^\s*name="([^"]+)"', source, re.M)
+        if match:
+            produced[filename] = match.group(1) + ".exe"
+    return produced
+
+
+def _workflow_source(name):
+    path = os.path.join(ROOT, ".github", "workflows", name)
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def test_build_outputs_do_not_collide_by_letter_case():
+    """The two .exe names must differ by more than letter case.
+
+    ``BoseCtl.exe`` and ``bosectl.exe`` lower-case to the same string, so on
+    Windows and macOS they are one file. Downloading both from a Release into
+    one folder — or merging both CI artefacts into one directory, as the
+    verify job does — silently overwrites one with the other. That is what
+    broke the checksum step, and it would have hit users identically.
+    """
+    produced = _spec_executables()
+    assert len(produced) >= 2, produced
+    lowered = [value.lower() for value in produced.values()]
+    assert len(set(lowered)) == len(lowered), (
+        "these build outputs collide on a case-insensitive filesystem, so one "
+        "will silently overwrite the other: %r" % produced)
+
+
+@pytest.mark.parametrize("workflow", ["build.yml", "release.yml"])
+def test_workflow_artifact_names_do_not_collide_by_letter_case(workflow):
+    names = re.findall(r"^\s*artifact:\s*(\S+)", _workflow_source(workflow), re.M)
+    lowered = [name.lower() for name in names]
+    assert len(set(lowered)) == len(lowered), (workflow, names)
+
+
+@pytest.mark.parametrize("workflow", ["build.yml", "release.yml"])
+def test_workflows_only_reference_artefacts_the_specs_build(workflow):
+    """A rename that misses one workflow step should fail here, not in CI.
+
+    These paths are spelled out in a dozen places across two workflows; the
+    only thing that keeps them honest is an assertion that every
+    ``dist/<name>.exe`` mentioned actually comes out of a spec.
+    """
+    produced = set(_spec_executables().values())
+    referenced = set(re.findall(r"dist/([A-Za-z0-9_.-]+\.exe)",
+                                _workflow_source(workflow)))
+    assert referenced, workflow
+    assert referenced <= produced, (
+        "%s references executables no spec builds: %r"
+        % (workflow, sorted(referenced - produced)))

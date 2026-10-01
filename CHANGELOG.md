@@ -52,7 +52,7 @@ First Windows release. Based on upstream bosectl 0.5.0.
   exception text stays byte-for-byte upstream English; translation happens
   one layer up, and the original line is always preserved underneath.
 - **Packaging** (`build/`): PyInstaller specs for a windowed `BoseCtl.exe`
-  and a console `bosectl.exe`, generated icon, Windows version resource, and
+  and a console `bosectl-cli.exe`, generated icon, Windows version resource, and
   a version-consistency checker.
 - **CI/CD** (`.github/workflows/`): test matrix (Windows 3.9-3.13, plus
   Linux and macOS for the library half), a build workflow that packages and
@@ -78,6 +78,13 @@ First Windows release. Based on upstream bosectl 0.5.0.
 
 ### Fixed
 
+- **Case-colliding artefact names.** `BoseCtl.exe` and `bosectl.exe`
+  lower-case to the same string, so on Windows and macOS they are one file.
+  The checksum-verification job merges both CI artefacts into a single
+  directory, so one silently overwrote the other and the sums could not match;
+  a user downloading both from the Releases page into one folder would hit the
+  same thing. The console build is now `bosectl-cli.exe`. The command set,
+  output format and exit codes are unchanged.
 - **Case-colliding build spec names.** The two PyInstaller specs were named
   `build/BoseCtl.spec` and `build/bosectl.spec`. Windows and macOS
   filesystems are case-insensitive, so those are the same file: git stored
@@ -94,6 +101,10 @@ First Windows release. Based on upstream bosectl 0.5.0.
   `.spec` file — `compileall` only reads `.py`, and no module imports one — so
   a malformed spec previously survived every local check and only surfaced
   when the packaging job ran.
+- **PyInstaller's intermediate files are no longer committed.** The work
+  directory follows the spec *file* name, so renaming the specs moved it and
+  the `.gitignore` patterns stopped matching. Both jobs now pass
+  `--workpath build/work --distpath dist`, leaving one directory to ignore.
 
 ### Known limitations
 

@@ -185,7 +185,7 @@ entry against the source tree, so the table cannot rot into unreachable typos.
 **Windows-specific diagnostics.** `pybmap.diagnose()` reports the radio, paired
 and enumerated counts, how many devices were recognised as Bose, and whether
 product IDs could be read. It is surfaced as 高级 → Windows 蓝牙环境自检 in the
-GUI and `bosectl.exe --diagnose` on the CLI. When a connection fails below the
+GUI and `bosectl-cli.exe --diagnose` on the CLI. When a connection fails below the
 protocol layer, this is the fastest way to tell whether the problem is the
 radio, the pairing, or the model config.
 
@@ -217,7 +217,7 @@ is no native build step, no PyBluez, nothing to compile.
 
 **Two executables.** Windows fixes console-vs-windowed at link time, so one
 binary cannot serve both cleanly. `BoseCtl.exe` is windowed (no console flash on
-launch); `bosectl.exe` is a console binary. Splitting them also lets the CLI
+launch); `bosectl-cli.exe` is a console binary. Splitting them also lets the CLI
 build exclude tkinter/customtkinter/Pillow entirely.
 
 **One-file packaging.** Portable and install-free, at the cost of a 2-3 s

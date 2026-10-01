@@ -77,7 +77,7 @@ jobs:
             artifact: BoseCtl.exe
           - target: cli
             spec: build/bosectl-console.spec
-            artifact: bosectl.exe
+            artifact: bosectl-cli.exe
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,7 +105,7 @@ jobs:
         if: matrix.target == 'cli'
         shell: pwsh
         run: |
-          $exe = "dist/bosectl.exe"
+          $exe = "dist/bosectl-cli.exe"
           & $exe --version
           & $exe --mock status | Out-Host
           if ($LASTEXITCODE -ne 0) { throw "frozen CLI failed" }
@@ -179,7 +179,7 @@ jobs:
               echo "### Downloads"
               echo
               echo "- \`BoseCtl.exe\` — desktop app, no install, double-click to run."
-              echo "- \`bosectl.exe\` — command line (\`bosectl.exe --help\`)."
+              echo "- \`bosectl-cli.exe\` — command line (\`bosectl-cli.exe --help\`)."
               echo
               echo "Verify integrity against \`SHA256SUMS\` in this release."
             } > body.md
@@ -197,7 +197,7 @@ jobs:
           generate_release_notes: false
           files: |
             dist/BoseCtl.exe
-            dist/bosectl.exe
+            dist/bosectl-cli.exe
             dist/SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

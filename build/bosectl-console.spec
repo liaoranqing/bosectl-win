@@ -1,18 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for the console CLI (``bosectl.exe``).
+"""PyInstaller spec for the console CLI (``bosectl-cli.exe``).
 
 Build with::
 
-    pyinstaller --clean --noconfirm build/bosectl-console.spec
+    pyinstaller --clean --noconfirm --workpath build/work --distpath dist build/bosectl-console.spec
+
+The executable is deliberately named ``bosectl-cli.exe``, not ``bosectl.exe``:
+``BoseCtl.exe`` and ``bosectl.exe`` lower-case to the same string, so on a
+case-insensitive filesystem they are one file. Downloading both artefacts from
+a Release into the same folder would silently overwrite one with the other,
+and the CI job that verifies checksums would do the same to itself. The
+suffix also matches the spec's own name, so it is clear which build produced
+which binary.
 
 Kept separate from the GUI spec on purpose: the CLI has no GUI dependency,
 so excluding tkinter, customtkinter and Pillow cuts the executable from
 roughly 30 MB to a couple of MB and removes the slow first-launch unpack of
 the GUI's theme assets. Windows also fixes the console/windowed subsystem at
 link time, so one binary cannot serve both roles well.
-
-(The name avoids differing from ``BoseCtl-window.spec`` by letter case only —
-see the note in that file.)
 """
 
 import os
@@ -65,7 +70,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="bosectl",
+    name="bosectl-cli",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -78,5 +83,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=os.path.join(SPECPATH, "icon.ico"),
-    version=version_info._vs_version_info("bosectl.exe", "bosectl"),
+    version=version_info._vs_version_info("bosectl-cli.exe", "bosectl-cli"),
 )

@@ -4,7 +4,7 @@ name: Build Windows executables
 # needs a local Windows toolchain to get a runnable build:
 #
 #   BoseCtl.exe   windowed desktop app (one file, no install)
-#   bosectl.exe   console CLI (one file, no install)
+#   bosectl-cli.exe  console CLI (one file, no install)
 #
 # Artifacts are attached to the workflow run. Tagged pushes additionally get
 # a GitHub Release via release.yml.
@@ -41,7 +41,7 @@ jobs:
             smoke: BoseCtl
           - target: cli
             spec: build/bosectl-console.spec
-            artifact: bosectl.exe
+            artifact: bosectl-cli.exe
             smoke: bosectl
 
     steps:
@@ -84,7 +84,7 @@ jobs:
         run: |
           # A frozen console binary must produce usable output with no
           # Python on PATH assumptions and no console-mode surprises.
-          $exe = "dist/bosectl.exe"
+          $exe = "dist/bosectl-cli.exe"
           & $exe --version
           if ($LASTEXITCODE -ne 0) { throw "--version failed ($LASTEXITCODE)" }
 
@@ -163,6 +163,31 @@ jobs:
         shell: pwsh
         run: Get-ChildItem dist -Recurse | Select-Object Name, Length
 
+      - name: Confirm both binaries survived the download
+        shell: pwsh
+        run: |
+          # Both artefacts are merged into one directory, so a name collision
+          # between them overwrites one with the other on this
+          # case-insensitive filesystem. Checking for both up front turns that
+          # into an explicit message instead of a confusing checksum mismatch
+          # further down.
+          $wanted = @("BoseCtl.exe", "bosectl-cli.exe",
+                      "BoseCtl.exe.sha256", "bosectl-cli.exe.sha256")
+          $missing = @()
+          foreach ($name in $wanted) {
+            if (-not (Test-Path (Join-Path dist $name))) { $missing += $name }
+          }
+          if ($missing.Count -gt 0) {
+            throw ("missing from dist/: " + ($missing -join ", ") +
+                   " — the two executable names probably collide on a " +
+                   "case-insensitive filesystem")
+          }
+          $lower = $wanted | ForEach-Object { $_.ToLower() }
+          if (($lower | Sort-Object -Unique).Count -ne $lower.Count) {
+            throw "the expected file names collide by letter case"
+          }
+          "all four expected files present"
+
       - name: Verify SHA256 sums
         shell: pwsh
         run: |
@@ -183,7 +208,7 @@ jobs:
       - name: Confirm the CLI binary carries the release version
         shell: pwsh
         run: |
-          $version = (Get-Item dist/bosectl.exe).VersionInfo
+          $version = (Get-Item dist/bosectl-cli.exe).VersionInfo
           "FileVersion    = $($version.FileVersion)"
           "ProductName    = $($version.ProductName)"
           if (-not $version.FileVersion) { throw "no version resource embedded" }

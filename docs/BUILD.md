@@ -9,13 +9,20 @@ that a contributor on any machine can produce a shippable `.exe`.
 | Artefact | Spec | Subsystem | Contents |
 | --- | --- | --- | --- |
 | `BoseCtl.exe` | `build/BoseCtl-window.spec` | windowed | the GUI, tkinter, customtkinter, theme assets, icon |
-| `bosectl.exe` | `build/bosectl-console.spec` | console | the CLI only — tkinter and Pillow are excluded |
+| `bosectl-cli.exe` | `build/bosectl-console.spec` | console | the CLI only — tkinter and Pillow are excluded |
 
 Both are **one-file**: a single portable `.exe` with no install step, at the
 cost of a 2-3 s first-launch unpack. If you would rather have an instant start,
 build the GUI as a directory instead by moving `a.binaries` / `a.datas` from the
 `EXE(...)` call into a `COLLECT(...)` block; the result starts in well under a
 second.
+
+The names are not arbitrary. `BoseCtl.exe` and `bosectl.exe` lower-case to the
+same string, so on Windows and macOS they are a single file: two artefacts that
+differ only by case cannot coexist in one folder. That is why the console build
+is `bosectl-cli.exe`. The rule applies to every path this pipeline writes, and
+`tests/test_version.py` enforces it for both the specs' `name=` values and the
+workflow artifact names.
 
 ## Triggering a build
 
@@ -88,7 +95,7 @@ pyinstaller --clean --noconfirm --workpath build/work --distpath dist build/Bose
 pyinstaller --clean --noconfirm --workpath build/work --distpath dist build/bosectl-console.spec
 
 dist\BoseCtl.exe --demo
-dist\bosectl.exe --mock status
+dist\bosectl-cli.exe --mock status
 ```
 
 Requirements: Windows, Python 3.9+, and a Python that includes `tkinter` (the
@@ -109,7 +116,7 @@ asserts, on a real Windows runner:
    of "works from source, crashes frozen" bugs: missing customtkinter theme
    JSON, a missing icon, a Tcl path problem.
 4. **Checksums match** — `SHA256SUMS` is re-verified in a separate job.
-5. **The version resource is present and correct** — `bosectl.exe`'s
+5. **The version resource is present and correct** — `bosectl-cli.exe`'s
    `FileVersion` must start with `pybmap.__version__`.
 6. **`BoseCtl.exe` is genuinely windowed** — the PE subsystem field is read
    directly out of the header and must be `IMAGE_SUBSYSTEM_WINDOWS_GUI` (2).

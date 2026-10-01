@@ -23,7 +23,7 @@ Double-click `BoseCtl.exe`. First launch shows the **连接** page.
   ★, and shows the detected model. Click 连接 on the row you want.
 - **手动连接** — for when detection fails: pick the model from the dropdown and
   type the address. Find it in Windows 设置 → 蓝牙和其他设备 → your headphones,
-  or run `bosectl.exe --diagnose`.
+  or run `bosectl-cli.exe --diagnose`.
 - **启动时自动连接** — reconnect to the remembered device on launch.
 
 ### The six pages
@@ -66,8 +66,14 @@ crash cannot leave it truncated.
 
 ## Command line
 
-Run `bosectl.exe --help` for the localised cheat sheet, or `--help-raw` for
+Run `bosectl-cli.exe --help` for the localised cheat sheet, or `--help-raw` for
 upstream's original English one.
+
+The binary carries a `-cli` suffix because `BoseCtl.exe` and `bosectl.exe`
+lower-case to the same file name, and two files that differ only by case cannot
+be downloaded into the same folder on Windows or macOS. The command set, output
+format and exit codes are unchanged from upstream, and every example below works
+verbatim with `bosectl-cli.exe` substituted for `bosectl`.
 
 ### Environment variables (upstream-compatible)
 
@@ -94,40 +100,40 @@ upstream's original English one.
 ### Examples
 
 ```bash
-bosectl.exe --diagnose                      # start here when something fails
-bosectl.exe --mock status                   # try it with no hardware
+bosectl-cli.exe --diagnose                      # start here when something fails
+bosectl-cli.exe --mock status                   # try it with no hardware
 
-bosectl.exe status                          # full state
-bosectl.exe battery                         # just the number
-bosectl.exe cnc 8                           # 0 = max ANC, 10 = most ambient
-bosectl.exe anr high                        # QC35 generation only
-bosectl.exe anc on
-bosectl.exe wind off
-bosectl.exe eq 3 0 -2                       # bass / mid / treble, -10..+10
-bosectl.exe eq flat
-bosectl.exe spatial head                    # off | room | head
-bosectl.exe name "My QC Ultra"
+bosectl-cli.exe status                          # full state
+bosectl-cli.exe battery                         # just the number
+bosectl-cli.exe cnc 8                           # 0 = max ANC, 10 = most ambient
+bosectl-cli.exe anr high                        # QC35 generation only
+bosectl-cli.exe anc on
+bosectl-cli.exe wind off
+bosectl-cli.exe eq 3 0 -2                       # bass / mid / treble, -10..+10
+bosectl-cli.exe eq flat
+bosectl-cli.exe spatial head                    # off | room | head
+bosectl-cli.exe name "My QC Ultra"
 
-bosectl.exe profiles                        # list every profile
-bosectl.exe switch quiet
-bosectl.exe profile set 通勤 cnc=8 spatial=off wind=on anc=on
-bosectl.exe profile rm 通勤
+bosectl-cli.exe profiles                        # list every profile
+bosectl-cli.exe switch quiet
+bosectl-cli.exe profile set 通勤 cnc=8 spatial=off wind=on anc=on
+bosectl-cli.exe profile rm 通勤
 
-bosectl.exe multipoint on
-bosectl.exe autopause on
-bosectl.exe autoanswer off
-bosectl.exe prompts on
-bosectl.exe sidetone medium
+bosectl-cli.exe multipoint on
+bosectl-cli.exe autopause on
+bosectl-cli.exe autoanswer off
+bosectl-cli.exe prompts on
+bosectl-cli.exe sidetone medium
 
-bosectl.exe source                          # where audio is coming from
-bosectl.exe route AA:BB:CC:DD:EE:FF         # hand audio to another device
-bosectl.exe pair                            # enter pairing mode
-bosectl.exe off                             # power the headphones down
+bosectl-cli.exe source                          # where audio is coming from
+bosectl-cli.exe route AA:BB:CC:DD:EE:FF         # hand audio to another device
+bosectl-cli.exe pair                            # enter pairing mode
+bosectl-cli.exe off                             # power the headphones down
 
-bosectl.exe buttons                         # show the mapping
-bosectl.exe buttons set ANC                 # remap
-bosectl.exe dump                            # every mode slot
-bosectl.exe raw 1f 01 05 00                 # raw BMAP frame
+bosectl-cli.exe buttons                         # show the mapping
+bosectl-cli.exe buttons set ANC                 # remap
+bosectl-cli.exe dump                            # every mode slot
+bosectl-cli.exe raw 1f 01 05 00                 # raw BMAP frame
 ```
 
 ### Reading errors
@@ -143,7 +149,7 @@ Connection failed: No BMAP channel found on 68:F2:1F:0D:F5:11 (tried 2, 8, 9): .
 原始信息：No BMAP channel found on ...
 ```
 
-Diagnostics go to stderr, so `bosectl.exe --mock battery` still pipes cleanly as
+Diagnostics go to stderr, so `bosectl-cli.exe --mock battery` still pipes cleanly as
 a number on stdout.
 
 ## Python API
@@ -176,7 +182,7 @@ print(pybmap.detect_device_type(0x4082))
 
 ## Troubleshooting
 
-Start with `bosectl.exe --diagnose`. It reports whether a Bluetooth radio is
+Start with `bosectl-cli.exe --diagnose`. It reports whether a Bluetooth radio is
 present, how many devices are paired, how many are recognised as Bose, and
 whether product IDs could be read — which tells you immediately whether the
 problem is below or above the protocol layer.
@@ -193,5 +199,5 @@ problem is below or above the protocol layer.
 | 需要 Bose 云端鉴权 | The operation (rename, some button remaps) is gated behind cloud auth in the firmware. Everyday settings work. |
 | "设备返回了错误" | The register is not writable on this firmware. Try the equivalent in the Bose app once to confirm it works there, then report it. |
 
-When filing an issue, include `bosectl.exe --diagnose`, your headset model and
+When filing an issue, include `bosectl-cli.exe --diagnose`, your headset model and
 firmware version (shown in `status`), and the exact failing command.

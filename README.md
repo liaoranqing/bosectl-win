@@ -64,8 +64,12 @@ Headphones、QuietComfort 45、QuietComfort 耳塞、QuietComfort 35 / 35 II、U
 | 文件 | 说明 |
 | --- | --- |
 | `BoseCtl.exe` | 桌面程序。双击运行。 |
-| `bosectl.exe` | 命令行工具。`bosectl.exe --help` 查看用法。 |
+| `bosectl-cli.exe` | 命令行工具。`bosectl-cli.exe --help` 查看用法。 |
 | `SHA256SUMS` | 校验和，用于确认下载完整。 |
+
+> 命令行程序为什么叫 `bosectl-cli.exe` 而不是 `bosectl.exe`？因为
+> `BoseCtl.exe` 和 `bosectl.exe` 忽略大小写后是**同一个文件名**，在 Windows/macOS 上
+> 同时下载到同一个文件夹会互相覆盖。加 `-cli` 后缀可以避免这个坑。
 
 Windows SmartScreen 首次运行会提示"未知发布者"（EXE 未做代码签名）：点"更多信息 → 仍要运行"。
 如介意，可自行从源码构建 —— 见下。
@@ -83,25 +87,25 @@ Windows SmartScreen 首次运行会提示"未知发布者"（EXE 未做代码签
 
 ```bash
 # 环境自检：蓝牙适配器、已配对设备、能否读到产品 ID
-bosectl.exe --diagnose
+bosectl-cli.exe --diagnose
 
 # 无硬件试跑（内置模拟设备）
-bosectl.exe --mock status
+bosectl-cli.exe --mock status
 
 # 真实设备
-bosectl.exe status                 # 型号、电量、模式、全部设置
-bosectl.exe cnc 8                  # 降噪等级（0 = 最强降噪）
-bosectl.exe eq 3 0 -2              # 均衡器：低音/中音/高音
-bosectl.exe spatial head           # 空间音频
-bosectl.exe switch 沉浸            # 切换到指定配置
-bosectl.exe profile set 通勤 cnc=8 spatial=off wind=on
-bosectl.exe raw 1f 01 05 00        # 直接发送 BMAP 数据包
+bosectl-cli.exe status                 # 型号、电量、模式、全部设置
+bosectl-cli.exe cnc 8                  # 降噪等级（0 = 最强降噪）
+bosectl-cli.exe eq 3 0 -2              # 均衡器：低音/中音/高音
+bosectl-cli.exe spatial head           # 空间音频
+bosectl-cli.exe switch 沉浸            # 切换到指定配置
+bosectl-cli.exe profile set 通勤 cnc=8 spatial=off wind=on
+bosectl-cli.exe raw 1f 01 05 00        # 直接发送 BMAP 数据包
 
 # 指定设备
-bosectl.exe --mac 68:F2:1F:0D:F5:11 --device qc_ultra2 status
+bosectl-cli.exe --mac 68:F2:1F:0D:F5:11 --device qc_ultra2 status
 ```
 
-`bosectl.exe --help` 是中文速查表；`--help-raw` 保留上游原始英文帮助。
+`bosectl-cli.exe --help` 是中文速查表；`--help-raw` 保留上游原始英文帮助。
 环境变量 `BOSE_MAC` / `BMAP_MAC`、`BMAP_DEVICE`、`BMAP_TIMEOUT`、`BMAP_MOCK` 与上游一致。
 
 ## 从源码运行
@@ -128,7 +132,7 @@ pytest tests -q                    # 测试
 | 流水线 | 触发 | 产出 |
 | --- | --- | --- |
 | [`ci.yml`](.github/workflows/ci.yml) | push / PR | 版本一致性检查、全量测试（Windows 3.9/3.11/3.13 + Linux + macOS）、界面冒烟测试、ruff 检查 |
-| [`build.yml`](.github/workflows/build.yml) | push / PR / 手动 | 打包 `BoseCtl.exe` 与 `bosectl.exe`，实际启动验证，SHA256 校验，PE 子系统检查，上传为构建产物 |
+| [`build.yml`](.github/workflows/build.yml) | push / PR / 手动 | 打包 `BoseCtl.exe` 与 `bosectl-cli.exe`，实际启动验证，SHA256 校验，PE 子系统检查，上传为构建产物 |
 | [`release.yml`](.github/workflows/release.yml) | 推送 `v*` 标签 | 校验版本号一致 → 跑测试 → 打包 → 验证 → 自动创建 GitHub Release 并附上 EXE 与校验和 |
 
 发布新版本只需：
@@ -151,11 +155,11 @@ git push origin main --tags
 
 打包不是"能编译就算过"。构建流水线会在 Windows runner 上实际验证：
 
-- `bosectl.exe --version` / `--help` / `--mock status` / `--mock cnc 8` 均返回 0；
+- `bosectl-cli.exe --version` / `--help` / `--mock status` / `--mock cnc 8` 均返回 0；
 - `BoseCtl.exe --demo` 启动后 20 秒仍在运行（能抓住"启动即崩溃"：主题资源缺失、
   customtkinter 参数改名等）；
 - 两个 EXE 的 SHA256 与记录一致；
-- `bosectl.exe` 的属性对话框里 `FileVersion` 与源码版本号一致；
+- `bosectl-cli.exe` 的属性对话框里 `FileVersion` 与源码版本号一致；
 - `BoseCtl.exe` 的 PE 子系统是 `WINDOWS_GUI`（否则每次启动都会闪黑框）。
 
 界面本身由 `tests/test_gui_smoke.py` 覆盖：它创建真实窗口、连到模拟耳机、逐页访问、
@@ -217,12 +221,12 @@ bosectl-win/
 | "设备拒绝连接" | 耳机未配对、未开机，或不在范围内。先在 Windows 蓝牙设置里确认"已连接"。 |
 | "连接超时" | 耳机待机休眠。操作一次唤醒，或把"连接超时"调到 12 / 20 秒。 |
 | "未找到已配对的 Bose 设备" | 尚未配对，或设备名不含 Bose。改用"手动连接"填写地址与型号。 |
-| 扫描列表是空的 | 运行 `bosectl.exe --diagnose`，按报告检查蓝牙适配器与配对状态。 |
+| 扫描列表是空的 | 运行 `bosectl-cli.exe --diagnose`，按报告检查蓝牙适配器与配对状态。 |
 | 某型号没有均衡器 / 空间音频 | 该型号硬件不支持（如 QC35 世代）。界面会自动禁用对应控件。 |
 | "需要 Bose 云端鉴权" | 该操作（重命名、部分按键重映射）被固件锁定。日常设置不受影响。 |
 | 界面模糊 | 程序已开启 per-monitor DPI 感知；若仍模糊，检查系统缩放设置。 |
 
-命令行报错时，`bosectl.exe --diagnose` 的输出是最有用的信息；提交 issue 时请附上它。
+命令行报错时，`bosectl-cli.exe --diagnose` 的输出是最有用的信息；提交 issue 时请附上它。
 
 ## 开发
 
